@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+
+<link rel="stylesheet" href="http://bn.tagfans.com/public/themes/A1/style.css" />
+<link rel="stylesheet" href="http://bn.tagfans.com/public/themes/A1/jquery.mobile.icons.min.css" />
+<script type="text/javascript" src="cordova.js"></script>
+<link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.5/jquery.mobile.structure-1.4.5.css">
+<script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
+<script src="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+<script src="handlebars-v2.0.0.js"></script>
+
+<script src="https://www.paypalobjects.com/js/external/paypal-button.min.js"></script>
+
+
+
+<!-----------------------necessaryJSPlugin----------------------->
+<script src="jquery.guillotine.js"></script>
+<script src="html2canvas.js"></script>
+<script src="photo.js?v=2"></script>
+
+<!-----------------------necessaryCssFile----------------------->
+
+<link rel="stylesheet" href="css/photo.css">
+<link rel="stylesheet" href="jquery.guillotine.css">
+
+
+		
+
+
+<!-----------------------TemplateStart----------------------->
+<script id="imageEditorTemplate" type="text/x-handlebars-template">
+	<div class="imageUploadTemplate">
+		<div class="photoUploadMenu">
+			<input  type="file" name="files[]" class="fileSelector"/>
+			<div class="photoUploadItemList">
+				<button class="photoUploadItem" alt="camera" title="Camera"><span class="photo_icon icon_camera"></span><span><TL>Camera</TL></span></button>
+				<button class="photoUploadItem" alt="files" title="Image Document"><span class="photo_icon icon_picture"></span><span><TL>Picture</TL></span></button>
+				<button class="photoUploadItem" alt="search" title="Image From Web"><span class="photo_icon icon_web"></span><span><TL>Web</TL></span></button>
+			</div>				
+		</div>
+		<div class= "searchArea">
+			<div class="searchWebSourceWrapper">
+				<select class="searchWebSource" data-native-menu="true" data-iconpos="noicon">
+					<option value="google" select="checked"><TL>Google</TL></option>
+					<option value="flickr"><TL>Flickr</TL></option>
+					<option value="picasa"><TL>Picasa</TL></option>
+				</select>
+				<input class="searchBox" type="text"  placeholder="Search" TL="placeholder">
+			</div>
+			<div class="searchResultWrapper">
+				<div class="data searchResult"></div>
+			</div>
+		</div>
+		<div class="showImageArea">
+			<button class="editBtn"><span class="ui-btn-icon-notext ui-icon-edit"></span><span><TL>Edit</TL></span></button>
+			<div class="loadImage"><span class="ui-btn-icon-notext ui-icon-recycle"></span><span><TL>Loading</TL>...</span></div>
+			<div class="imageError"><span class="ui-btn-icon-notext ui-icon-alert"></span><span><TL>Image error</TL>...</span></div>
+			<img class="showImage">
+		</div>
+		<img>
+	</div>
+	<div class="imageEditorTemplate">
+		<div class="imageEditor">
+			<div class="imageEditorOperate">
+				<div class='imageEditorControls'>
+					<div class="imageEditorControlBtn rescaleBtn original"  title='Original'><span class="photo_icon_2x icon_original"></span></div>
+					<div class="imageEditorControlBtn zoomIn"  title='Zoom in'><span class="photo_icon_2x icon_zoomin"></span></div>
+					<div class="imageEditorControlBtn zoomOut"  title='Zoom out'><span class="photo_icon_2x icon_zoomout"></span></div>
+					<div class="imageEditorControlBtn rotateRight"  title='Rotate right'><span class="photo_icon_2x icon_rotate"></span></div>	
+					<div class="imageEditorControlBtn moreAction"  title='More action'><span class="photo_icon_2x icon_free"></span></div>
+					<div class="imageEditorControlBtn cancel"  title='Close editor' style="display:none"><span class="photo_icon_2x icon_close"></span></div>
+				</div>
+				<div class="imageEditorControlsBlock"></div>
+				<div class='imageEditorScale' style="display:none">
+					<input class="slider" type="range" name="slider-1" id="slider-1" value="50" min="0" max="100"/>
+				</div>
+				<div class="imageEditorConfirm" style="display:none">
+					<div class="save"></div>
+					<div class="cancel"></div>
+				</div>
+			</div>
+			<div style="position:relative;">
+				<div class='imageEditorScales'>
+					<div class="rescaleBtn" title='16:9' val="0.5625"><span class="icon_16_9 photo_icon_2x"></span></div>	
+					<div class="rescaleBtn" title='4:3' val="0.75"><span class="icon_4_3 photo_icon_2x"></span></div>
+					<div class="rescaleBtn" title=1:1' val="1" ><span class="icon_1_1 photo_icon_2x"></span></div>
+					<div class="rescaleBtn" title='3:4' val="1.33333"><span class="icon_3_4 photo_icon_2x"></span></div>
+					<div class="rescaleBtn" title='9:16' val="1.77778"><span class="icon_9_16 photo_icon_2x"></span></div>
+				</div>	
+				<div class="imageEditorArea"></div>
+			</div>
+		</div>
+	</div>
+</script>
+<script id="imageItemTemplate" type="text/x-handlebars-template">
+	{{#data}}
+	<div class="imageItem">
+		<div class="imageDiv" style="background-image:url({{cover}})"></div>
+		<div class="btnDiv"><span class="addImage ui-btn-icon-notext ui-icon-plus" alt="{{url}}"></span></div>
+	</div>
+	{{/data}}
+</script>
+<script id="imageEditorImageTemplate" type="text/x-handlebars-template">
+	<div  class="theparent">
+	  <img class="thepicture">
+	  <div class="coverFrame"></div>
+	</div>
+</script>
+
+
+<!-----------------------TemplateEnd----------------------->
+
+<script>
+	var image;
+	localStorage.phonegap = "true";
+
+	window.onload = function() {
+	//	alert(navigator.userAgent);
+		onloadStart();
+	}	
+
+	function onloadStart() {
+		function getParameterByName(name) {
+			var tmp = window.location.href.split("#");
+			var result;
+			if (tmp[1]){
+				var match = RegExp('[?&]' + name + '=([^&]*)').exec(tmp[1]);
+				if (match){
+					result = match && decodeURIComponent(match[1].replace(/\+/g, ' '));
+				}
+			}
+			if (result) return result;
+			var match = RegExp('[?&]' + name + '=([^&]*)').exec(tmp[0]);
+			return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
+		}
+
+		function loadjscssfile(filename, filetype){
+			 if (filetype=="js"){ //if filename is a external JavaScript file
+			  var fileref=document.createElement('script');
+			  fileref.setAttribute("type","text/javascript");
+			  fileref.setAttribute("src", filename);
+			 }
+			 else if (filetype=="css"){ //if filename is an external CSS file
+			  var fileref=document.createElement("link");
+			  fileref.setAttribute("rel", "stylesheet");
+			  fileref.setAttribute("type", "text/css");
+			  fileref.setAttribute("href", filename);
+			 }
+			 if (typeof fileref!="undefined")
+			  document.getElementsByTagName("head")[0].appendChild(fileref);
+		}	
+
+		$.ajax({
+			url: 'http://www.google.com/jsapi?callback',
+			dataType: 'script',
+			cache: true,
+			success: function() {
+				google.load('search', '1', {'callback': start});
+			}
+		});
+
+						
+		function start(){
+			var target = document.getElementById("target");
+			image = new imageEditor(target,"",null
+				,function(e){
+					document.getElementById("url").innerHTML=e;
+					document.getElementById("showImage").src=e;
+					//window.open(e,'width=650, height=500,scrollbars=yes');
+				}
+				,function(status){
+					if(status){
+						$("body").css("overflow-x","");
+						$("div[data-role='page']").css("overflow-x","");
+					}
+					else{
+						$("body").css("overflow-x","visible");
+						$("div[data-role='page']").css("overflow-x","visible");
+					}
+				}
+			);
+		}
+		
+		$("#paypalBtn").find("form").attr("target","_blank")
+	}		
+	
+	function buy(){
+		$(".paypal-button").trigger("click");
+
+	}
+	
+</script>
+</head>
+<body>
+
+<div style="width:100%;margin:0 auto;text-align: center;">
+
+	<span><button onclick="image.leaveEditor();" style="width:50%;display:inline;">Back</button><button onclick="image.getPhoto();" style="width:50%;display:inline;">Output</button></span>
+	<div id="target" style="width:100%;  max-width:1024px; margin: 0 auto;"></div>
+	<br>
+
+
+	<textarea id="url" style="position: fixed;bottom: 0;"></textarea>	
+	<img id="showImage" style="max-width:100%;" style="display:none">
+
+</div>
+</div>
+
+</body>
+
+</html>	
+	
+	
