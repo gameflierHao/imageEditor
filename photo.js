@@ -9,13 +9,12 @@ var imageEditor = function(elem,img,resolution,callback,onDraw){
 	this.initPhotoUploadSearch();
 	this.callback = callback;
 	this.onDraw = (onDraw) ? onDraw : null;
-	
-	this.resolution = (resolution) ? resolution : 800;
-	this.isSafari = (navigator.userAgent.indexOf("Safari") > -1 && navigator.userAgent.indexOf('Chrome') > -1) ? false : true;
+	this.resolution =  this.element.resolution  =  (resolution) ? resolution : 720;
+	this.isSafari = this.element.isSafari = (navigator.userAgent.indexOf("Safari") > -1 && navigator.userAgent.indexOf('Chrome') > -1) ? false : true;
+	this.androidNative = this.element.androidNative = (( navigator.userAgent.indexOf('Mozilla/5.0') > -1 &&  navigator.userAgent.indexOf('Android ') > -1 &&   navigator.userAgent.indexOf('AppleWebKit') > -1) && !( navigator.userAgent.indexOf('Chrome') > -1));
+	this.chromeVersion = this.element.chromeVersion = (window.navigator.appVersion.match(/Chrome\/(\d+)\./) && parseInt(window.navigator.appVersion.match(/Chrome\/(\d+)\./)[1], 10) > 30)  ?  true : false;
+	this.browserCheck = this.element.browserCheck = (this.isSafari || (!this.androidNative && this.chromeVersion));
 	this.angle = 0;
-	//this.zoom = 1;
-	//this.xStart = 0;
-	//this.yStart= 0;
 	this.scale = 0;
 	try {
 		this.googleSearch = new google.search.ImageSearch();
@@ -57,8 +56,12 @@ imageEditor.prototype.loadTemplate =  function(){
 		$(element).html(data).enhanceWithin();
 		$(element).find(".imageUploadTemplate").css('display','block');
 		$(element).find(".imageEditorTemplate").css('display','none');
-		if(imageUrl != null){
+	
+		if(imageUrl){
 			showImage(imageUrl,element);
+		}
+		else{
+			$(element).find(".uploadImage").show();
 		}
 	})
 }
@@ -70,12 +73,12 @@ imageEditor.prototype.initPhotoUploadSearch = function(){
 imageEditor.prototype.initPhotoUploadItem = function(){
 	var THIS = this;
 	var element = this.element;
-	var q = 0.5;
+	var browserCheck = this.browserCheck;
 	$(element)
 		.off("click")
 		.off("change")
 		.off("keypress")
-		.on('click','.photoUploadItem',function(){
+		.on("click",'.photoUploadItem',function(){
 			THIS.setUploadItem(element,$(this).attr("alt"));
 		})
 		.on("change",".fileSelector",function(){
@@ -98,7 +101,6 @@ imageEditor.prototype.initPhotoUploadItem = function(){
 									width = THIS.resolution;
 								}
 								height = parseInt(width * img.height/img.width);
-								
 								var canvas = document.createElement("canvas");
 								canvas.width = width;
 								canvas.height = height;
@@ -120,7 +122,7 @@ imageEditor.prototype.initPhotoUploadItem = function(){
 					}
 				}
 				else{
-					THIS.hideImage();
+					//THIS.hideImage();
 				}
 			}
 		})
@@ -130,8 +132,8 @@ imageEditor.prototype.initPhotoUploadItem = function(){
 			if(this.value!=null)
 				goSearch(THIS.searchOption,THIS,$(element).find(".searchBox").val())
 		})	
-		.on("click",".addImage",function(){
-			THIS.showImage($(this).attr("alt"));
+		.on("click",".imageItem",function(){
+			THIS.showImage($(this).find(".addImage").attr("alt"));
 			$(element).find(".searchArea").hide();
 			THIS.clearImageFile();
 		})
@@ -174,6 +176,9 @@ imageEditor.prototype.initPhotoUploadItem = function(){
 	}
 	
 	function checkImage(img){
+		if(!browserCheck){
+			return  {result:false,e:"The operation is not support your browser!"};
+		}
 		try{
 			var file = $(element).find(".fileSelector")[0].files[0];
 			if(typeof file == "undefined"){
@@ -182,7 +187,7 @@ imageEditor.prototype.initPhotoUploadItem = function(){
 			else{
 				var reader = new window.FileReader();
 				 reader.readAsDataURL(file); 
-				 return true;
+				 return {result:true,dataUrl:img};
 			}
 		 }
 		 catch(e){
@@ -194,10 +199,10 @@ imageEditor.prototype.initPhotoUploadItem = function(){
 				var ctx = canvas.getContext("2d");
 				ctx.drawImage(image, 0, 0);
 				var dataUrl =  canvas.toDataURL("image/jpeg");
-				return dataUrl;
+				return {result:true,dataUrl:dataUrl};
 			}
 			 catch(e){
-				return false;
+				return  {result:false,e:TL("idx_18")};
 			}
 		 }
 	}
@@ -205,14 +210,14 @@ imageEditor.prototype.initPhotoUploadItem = function(){
 		element.status = "editor";
 		var checkImageUrl = checkImage(img);
 		var image = document.createElement('img');
-		if(checkImageUrl === false){
-			alert(TL("idx_18"));
+		if(checkImageUrl.result === false){
+			alert(checkImageUrl.e);
 			return false;
-		}else if(checkImageUrl === true){
-			image.src = img;
+		}else if(checkImageUrl.result === true && checkImageUrl.dataUrl){
+			image.src = checkImageUrl.dataUrl;
 		}
 		else{
-			image.src = checkImageUrl;
+
 		}
 		image.onload = function(){
 			 var scale = image.height/image.width;
@@ -291,25 +296,30 @@ imageEditor.prototype.initPhotoUploadItem = function(){
 				picture.attr("src",image);
 				var imageEditor = $(element)[0].imageEditor;
 				picture.off('load').on('load', function(){
+					var naturalScale = ( this.naturalWidth>0 &&  this.naturalHeight>0) ? (this.naturalWidth/this.naturalHeight) : 0;
 					var width = this.naturalWidth;
 					var height = scale * this.naturalWidth;
 					if(scale>1){
-						$(element).find(".theparent").css("max-width", (THIS.elementWidth/scale)+"px");
+						if(height<THIS.resolution){
+							$(element).find(".theparent").css("max-width", (width/scale)+"px");
+						}
+						else{
+							$(element).find(".theparent").css("max-width", (THIS.elementWidth/scale)+"px");
+						}
+					}
+					else{
+						if(width<THIS.resolution){
+							$(element).find(".theparent").css("max-width", (width)+"px");
+						}
 					}
 					picture.guillotine({
 						onChange: function(data, action){
-							imageEditor.angle = data.angle;
-							//imageEditor.zoom = data.scale;
-							//imageEditor.startX = data.x;
-							//imageEditor.startY = data.y;						
+							imageEditor.angle = data.angle;					
 						},
 						width:width,
 						height:height,
 						init:{ 
 							angle : imageEditor.angle
-							//,scale : imageEditor.zoom
-							//,x : imageEditor.startX
-							//,y : imageEditor.startY
 						}
 					});
 					picture.guillotine('fit');
@@ -318,10 +328,7 @@ imageEditor.prototype.initPhotoUploadItem = function(){
 						.off("click",".rescaleBtn").on("click",".rescaleBtn",function(){
 							var scale = parseFloat($(this).attr("val")); 
 							if($(this).hasClass( "original" )){
-								imageEditor.angle = 0;
-								//imageEditor.zoom = 1;
-								//imageEditor.startX = 0;
-								//imageEditor.startY = 0;									
+								imageEditor.angle = 0;						
 							}
 							draw(image,scale);  
 						})					
@@ -345,9 +352,11 @@ imageEditor.prototype.showImage = function(img,elem){
 	showImageArea.find(".editBtn").hide();
 	showImageArea.find(".imageError").hide();
 	showImageArea.find(".loadImage").show();
+	showImageArea.find(".uploadImage").hide();
 	var image = showImageArea.find(".showImage");
 	image.hide();
 	image.attr("src",img);
+
 	image
 		.off()
 		.on( "load", function(){
@@ -395,7 +404,10 @@ imageEditor.prototype.setUploadItem = function(element,type) {
 			inputTag.trigger('click');
 			break;	
 		case "search":	
-			searchArea.show();
+			if(searchArea.css("display")!="none")
+				searchArea.hide();
+			else
+				searchArea.show();
 			break;	
 	}
 }			
@@ -451,17 +463,26 @@ imageEditor.prototype.getPhoto = function(quality){
 	var imageFile = $(this.element).find(".fileSelector")[0].files[0];
 	var imageFileType = (imageFile && imageFile.type=="image/png") ? imageFile.type : "image/jpeg";
 	var resolution = this.resolution;
-	var q= (quality) ? quality : 0.5;
+	var element = this.element;
+	var q= (quality) ? quality : 0.7;
 	if(!$(this.element).find(".showImage").attr("src")){
 		alert("No image");
 		return false;
 	}
 	if(onDraw) onDraw(false);
+	$(element).css("opacity",0.05);
 	if(getStatus(this.element)){
 		var target = $(this.element).find(".guillotine-window")[0];
+		var parent = target.parentNode;
+		if($(this.element).find(".showImage")[0].naturalWidth>resolution)
+			$(parent).css("width",resolution);
 		if(this.isSafari || (!imageFile)){
+			parent.style.overflow = "visible";
 			html2canvas(target,{
 				onrendered: function(canvas) {
+					$(parent).css("width","");
+					parent.style.overflow = "hidden";				
+					$(element).css("opacity",1);
 					var newImg    = canvas.toDataURL(imageFileType,q);
 					callback(newImg);
 				}
@@ -472,8 +493,12 @@ imageEditor.prototype.getPhoto = function(quality){
 			reader.onloadend = function() {
 				var base64data = reader.result;         
 				$(target).find(".thepicture").attr("src",base64data);
+				parent.style.overflow = "visible";
 				html2canvas(target,{
 					onrendered: function(canvas) {
+						$(parent).css("width","");
+						parent.style.overflow = "hidden";
+						$(element).css("opacity",1);
 						var newImg    = canvas.toDataURL(imageFileType,q);
 						callback(newImg);
 					}
@@ -503,11 +528,28 @@ imageEditor.prototype.getPhoto = function(quality){
 					ctx.drawImage(img, 0, 0,width,height);
 				else
 					imageEditor.prototype.drawImageIOSFix(ctx, img, 0, 0, img.width, img.height, 0, 0, width, height);
-				callback(canvas.toDataURL(imageFileType,q))
+				callback(canvas.toDataURL(imageFileType))
 			}
 			catch(e){
-				callback(img.src);
+				if(img.src.indexOf("file://")>-1 || img.src.indexOf("content://")>-1){
+					var inputObj = document.createElement ("input");  
+					inputObj.type = "file"
+					inputObj.type = img.src;
+				    var canvas = document.createElement("canvas");
+					var width = img.width;
+					var height = img.height;
+					canvas.width = width;
+					canvas.height = height;
+					var ctx = canvas.getContext("2d");
+					ctx.drawImage(img, 0, 0);
+					var dataURL = canvas.toDataURL("image/jpeg",q);
+					callback(dataURL);
+				}
+				else{
+					callback(img.src);
+				}
 			}
+			$(element).css("opacity",1);
 		}
 	}
 }
@@ -563,7 +605,7 @@ imageEditor.prototype.flickrAppKey = "94d8f23ee75ccff0bdab552e819b8991";
 imageEditor.prototype.flickrFormat = "json";
 imageEditor.prototype.flickrSearchUrl = function(text){
 	var method = "flickr.photos.search";
-	return this.flickrServices +"method=" +method +"&api_key=" +this.flickrAppKey +"&text=" +text +"&format=" +this.flickrFormat;
+	return this.flickrServices +"method=" +method +"&api_key=" +this.flickrAppKey +"&text=" +text +"&format=" + this.flickrFormat;
 };
 imageEditor.prototype.picasaSearchUrl = function(text){
 	return "https://picasaweb.google.com/data/feed/api/all?q=" +text +"&max-results=60&alt=json";
@@ -576,17 +618,30 @@ imageEditor.prototype.loadHandle  = function(elementId,data,callback){
 }
 
 imageEditor.prototype.getCameraFile = function(element,type){
+	var isSafari = element.isSafari;
+	var browserCheck =  element.browserCheck;
 	navigator.camera.getPicture(onSuccess, onFail, 
 		{ 	
-			 quality: 20
-			,destinationType: Camera.DestinationType.DATA_URL
+			destinationType: Camera.DestinationType.DATA_URL 
 			,sourceType : ((type=="file") ? Camera.PictureSourceType.PHOTOLIBRARY  : Camera.PictureSourceType.CAMERA)
-			,allowEdit : true
+			,allowEdit :  ((isSafari || !browserCheck) ? true : false)
 			,encodingType: Camera.EncodingType.JPEG
+			,correctOrientation: false	
+			,mediaType : Camera.MediaType.PICTURE
+			,saveToPhotoAlbum: ((type=="file") ? false : true)
 		}
 	);
 	function onSuccess(imageData) {
 		imageEditor.prototype.showImage( "data:image/jpeg;base64," + imageData,element);
+		/*
+		if(!browserCheck){
+			imageEditor.prototype.showImage( "data:image/jpeg;base64," + imageData,element);
+		}
+		else{
+			if(isSafari)  imageData = imageData+'?_ts=' + new Date().getTime();
+			imageEditor.prototype.showImage( imageData,element);
+		}
+		*/
 		imageEditor.prototype.removeCameraFile();
 	}
 	function onFail(message) {
@@ -611,15 +666,12 @@ imageEditor.prototype.leaveEditor = function(){
 		return false;
 	}
 	else if(element.status=="editor"){
-		var confirmMessage= confirm(TL("idx_17"))
+		var confirmMessage= confirm(TL("idx_17"));
 		if(confirmMessage == true){
 			$(element).find(".imageUploadTemplate").css('display','block');
 			$(element).find(".imageEditorTemplate").css('display','none');
 			$(element).find(".theparent").remove();
 			$(element)[0].imageEditor.angle = 0;
-			//$(element)[0].imageEditor.zoom = 1;
-			//$(element)[0].imageEditor.startX = 0;
-			//$(element)[0].imageEditor.startY = 0;
 			element.status = "source";
 		}
 		return true;

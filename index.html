@@ -30,8 +30,6 @@
 
 
 		
-
-
 <!-----------------------TemplateStart----------------------->
 <script id="imageEditorTemplate" type="text/x-handlebars-template">
 	<div class="imageUploadTemplate">
@@ -60,6 +58,7 @@
 			<button class="editBtn"><span class="ui-btn-icon-notext ui-icon-edit"></span><span><TL>Edit</TL></span></button>
 			<div class="loadImage"><span class="ui-btn-icon-notext ui-icon-recycle"></span><span><TL>Loading</TL>...</span></div>
 			<div class="imageError"><span class="ui-btn-icon-notext ui-icon-alert"></span><span><TL>Image error</TL>...</span></div>
+			<div class="uploadImage"><span class="ui-btn-icon-notext ui-icon-arrow-u"></span><span><TL>Please upload image</TL>...</span></div>
 			<img class="showImage">
 		</div>
 		<img>
@@ -114,7 +113,6 @@
 
 
 <!-----------------------TemplateEnd----------------------->
-
 <script>
 	var image;
 	localStorage.phonegap = "true";
