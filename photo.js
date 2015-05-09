@@ -464,6 +464,7 @@ imageEditor.prototype.getPhoto = function(quality){
 	var imageFileType = (imageFile && imageFile.type=="image/png") ? imageFile.type : "image/jpeg";
 	var resolution = this.resolution;
 	var element = this.element;
+	var newDiv = $('<div></div>').appendTo("html");
 	var q= (quality) ? quality : 0.7;
 	if(!$(this.element).find(".showImage").attr("src")){
 		alert("No image");
@@ -477,33 +478,29 @@ imageEditor.prototype.getPhoto = function(quality){
 		if($(this.element).find(".showImage")[0].naturalWidth>resolution)
 			$(parent).css("width",resolution);
 		if(this.isSafari || (!imageFile)){
-			parent.style.overflow = "visible";
-			html2canvas(target,{
-				onrendered: function(canvas) {
-					$(parent).css("width","");
-					parent.style.overflow = "hidden";				
-					$(element).css("opacity",1);
-					var newImg    = canvas.toDataURL(imageFileType,q);
-					callback(newImg);
-				}
-			});	
+			drawCanvas();	
 		}
 		else{
 			reader.readAsDataURL(imageFile); 
 			reader.onloadend = function() {
 				var base64data = reader.result;         
 				$(target).find(".thepicture").attr("src",base64data);
-				parent.style.overflow = "visible";
-				html2canvas(target,{
-					onrendered: function(canvas) {
-						$(parent).css("width","");
-						parent.style.overflow = "hidden";
-						$(element).css("opacity",1);
-						var newImg    = canvas.toDataURL(imageFileType,q);
-						callback(newImg);
-					}
-				});
+				drawCanvas();
 			}
+		}
+		function drawCanvas(){
+			parent.style.overflow = "visible";
+			$(element).find(".theparent").clone().appendTo(newDiv);
+			html2canvas(target,{
+				onrendered: function(canvas) {
+					$(parent).css("width","");
+					parent.style.overflow = "hidden";
+					$(element).css("opacity",1);
+					var newImg    = canvas.toDataURL(imageFileType,q);
+					$(newDiv).remove();
+					callback(newImg);
+				}
+			});		
 		}
 	}
 	else{
