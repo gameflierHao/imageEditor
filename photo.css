@@ -140,10 +140,8 @@
 }
 .imageEditorArea{
 	width: 100%;
-	//float: left;
 	box-sizing: border-box;
 	margin: 10px auto;
-	//height: 500px;
 }
 .coverFrame{
 	height:100vh;
