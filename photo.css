@@ -250,6 +250,14 @@
 .imageEditorControls .imageEditorControlBtn .photo_icon_2x:after{
 	top: initial!important;
 }
+.pictureBox{
+	width:1600px!important;
+	height: 1600px!important;
+	opacity:0.1!important;
+}
+.bodyHide{
+	display: none!important;
+}
 /*
 .imageEditorControls .imageEditorControlBtn span:after{
 	top: initial;

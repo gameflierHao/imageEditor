@@ -470,14 +470,12 @@ imageEditor.prototype.getPhoto = function(quality){
 		return false;
 	}
 	if(onDraw) onDraw(false);
-	//$("html").css("opacity",0.05);
 	if(getStatus(this.element)){
-		if($(this.element).find(".showImage")[0].naturalWidth>resolution)
-			$(parent).css("width",resolution);
 		var newDiv = $(element).find(".theparent").clone().appendTo("html");
 		var target = $(newDiv).find(".guillotine-window")[0];
 		var parent = target.parentNode;			
-		
+		if($(this.element).find(".showImage")[0].naturalWidth>resolution)
+			$(parent).css("width",resolution);		
 		if(this.isSafari || (!imageFile)){
 			drawCanvas();	
 		}
@@ -493,15 +491,12 @@ imageEditor.prototype.getPhoto = function(quality){
 			target.style.overflow = "visible";
 			parent.style.overflow = "visible";
 			$(newDiv).css("float","left");
-			$("html").css("height",resolution+"px");
-			$("html").css("width",resolution+"px");
-			$("body").css("display","none");
+			$("html").addClass("pictureBox");
+			$("body").addClass("bodyHide");			
 			html2canvas(target,{
 				onrendered: function(canvas) {
-					$("html").css("height","");
-					$("html").css("width","");
-					$("body").css("display","");
-					$("html").css("opacity","");
+					$("html").removeClass("pictureBox");
+					$("body").removeClass("bodyHide");			
 					var newImg    = canvas.toDataURL(imageFileType,q);
 					$(newDiv).remove();
 					callback(newImg);
