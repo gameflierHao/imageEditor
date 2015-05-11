@@ -464,7 +464,7 @@ imageEditor.prototype.getPhoto = function(quality){
 	var imageFileType = (imageFile && imageFile.type=="image/png") ? imageFile.type : "image/jpeg";
 	var resolution = this.resolution;
 	var element = this.element;
-	var q= (quality) ? quality : 0.7;
+	var q= (quality) ? quality : 0.9;
 	if(!$(this.element).find(".showImage").attr("src")){
 		alert("No image");
 		return false;
